@@ -8,12 +8,7 @@
   "scripts": {
     "build": "tsc",
     "start:server": "npm run build && node dist/src/main.js",
-    "dev:server": "tsx --watch src/main.ts",
-    "start": "npm run build && node dist/index.js",
-    "test": "npm run build && node dist/examples/test.js",
-    "dev": "tsx index.ts",
-    "dev:test": "tsx examples/test.ts",
-    "dev:quick-test": "tsx examples/quick-test.ts"
+    "dev:server": "tsx --watch src/main.ts"
   },
   "keywords": [
     "mcp",
