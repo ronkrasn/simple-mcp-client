@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Asana MCP Connection</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .section-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+            font-size: 13px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 13px;
+            margin-bottom: 15px;
+            font-family: 'Courier New', monospace;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+        }
+
+        button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #1565c0;
+        }
+
+        .error {
+            background: #ffebee;
+            border-left: 4px solid #f44336;
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #c62828;
+            display: none;
+        }
+
+        .error.show {
+            display: block;
+        }
+
+        .success {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #2e7d32;
+            display: none;
+        }
+
+        .success.show {
+            display: block;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            color: #667eea;
+            margin-top: 15px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .result {
+            background: #f8f9fa;
+            border: 2px solid #667eea;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 15px;
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            display: none;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .result.show {
+            display: block;
+        }
+
+        .tool-item {
+            background: white;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            border-left: 3px solid #4caf50;
+        }
+
+        .tool-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .tool-desc {
+            color: #666;
+            font-size: 12px;
+        }
+
+        a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Test Asana MCP Connection</h1>
+        <p class="subtitle">Fetch available tools from Asana MCP Server</p>
+
+        <!-- Token Input Section -->
+        <div class="section">
+            <div class="section-title">Enter Your Asana Access Token</div>
+
+            <label for="tokenInput">Access Token:</label>
+            <input
+                type="text"
+                id="tokenInput"
+                placeholder="Paste your Asana access token here..."
+                value="">
+
+            <button id="testBtn" onclick="testConnection()">
+                Test Connection & Fetch Tools
+            </button>
+
+            <div class="info">
+                <strong>How to get a token:</strong><br><br>
+                <strong>Option 1: Personal Access Token (Quick & Easy)</strong><br>
+                1. Go to <a href="https://app.asana.com/0/my-apps" target="_blank">https://app.asana.com/0/my-apps</a><br>
+                2. Click "Create new token"<br>
+                3. Give it a name and copy the token<br>
+                4. Paste it above<br><br>
+
+                <strong>Option 2: OAuth Token</strong><br>
+                1. Use the <a href="oauth-asana-simple.html">OAuth Helper</a> to authenticate<br>
+                2. Copy the access token<br>
+                3. Paste it above<br><br>
+
+                <strong>Note:</strong> If OAuth gives you "invalid_request" error, you need to enable your app in the
+                <a href="https://app.asana.com/0/developer-console" target="_blank">Asana Developer Console</a>
+                under "Manage Distribution"
+            </div>
+
+            <div id="loading" class="loading">
+                <p>Connecting to Asana MCP Server...</p>
+            </div>
+
+            <div id="error" class="error"></div>
+            <div id="success" class="success"></div>
+        </div>
+
+        <!-- Results Section -->
+        <div class="section">
+            <div class="section-title">Available Tools</div>
+            <div id="toolsList"></div>
+            <div id="result" class="result"></div>
+        </div>
+
+        <!-- Configuration -->
+        <div class="section">
+            <div class="section-title">Configuration</div>
+            <div style="font-size: 12px; color: #666;">
+                <div style="margin-bottom: 8px;">
+                    <strong>MCP Server URL:</strong> https://mcp.asana.com/sse
+                </div>
+                <div style="margin-bottom: 8px;">
+                    <strong>API Endpoint:</strong> http://localhost:3000/mcp/tools
+                </div>
+                <div style="margin-bottom: 8px;">
+                    <strong>Connection Type:</strong> SSE (Server-Sent Events)
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Load saved token if exists
+        window.addEventListener('load', () => {
+            const savedToken = localStorage.getItem('asana_access_token');
+            if (savedToken) {
+                document.getElementById('tokenInput').value = savedToken;
+            }
+        });
+
+        async function testConnection() {
+            const token = document.getElementById('tokenInput').value.trim();
+            const testBtn = document.getElementById('testBtn');
+            const loading = document.getElementById('loading');
+            const error = document.getElementById('error');
+            const success = document.getElementById('success');
+            const result = document.getElementById('result');
+            const toolsList = document.getElementById('toolsList');
+
+            // Validation
+            if (!token) {
+                error.textContent = 'Please enter an access token';
+                error.classList.add('show');
+                return;
+            }
+
+            // Reset UI
+            testBtn.disabled = true;
+            loading.classList.add('show');
+            error.classList.remove('show');
+            success.classList.remove('show');
+            result.classList.remove('show');
+            toolsList.innerHTML = '';
+
+            try {
+                // Save token
+                localStorage.setItem('asana_access_token', token);
+
+                // Call the API
+                const response = await fetch('http://localhost:3000/mcp/tools', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        type: 'sse',
+                        url: 'https://mcp.asana.com/sse',
+                        token: token
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+                }
+
+                const data = await response.json();
+
+                loading.classList.remove('show');
+
+                if (data.success) {
+                    success.textContent = `Successfully connected! Found ${data.toolCount} tools.`;
+                    success.classList.add('show');
+
+                    // Display tools in a nice format
+                    if (data.tools && data.tools.length > 0) {
+                        toolsList.innerHTML = data.tools.map(tool => `
+                            <div class="tool-item">
+                                <div class="tool-name">${tool.name}</div>
+                                <div class="tool-desc">${tool.description || 'No description'}</div>
+                            </div>
+                        `).join('');
+                    }
+
+                    // Also show raw JSON
+                    result.textContent = JSON.stringify(data, null, 2);
+                    result.classList.add('show');
+                } else {
+                    throw new Error(data.error || 'Unknown error');
+                }
+
+            } catch (err) {
+                loading.classList.remove('show');
+                error.textContent = `Error: ${err.message}`;
+                error.classList.add('show');
+                console.error('Connection error:', err);
+            } finally {
+                testBtn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

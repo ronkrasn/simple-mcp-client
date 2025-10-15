@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asana OAuth - MCP Client</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .step {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .step-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+        }
+
+        button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .token-display {
+            background: #f8f9fa;
+            border: 2px solid #667eea;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 15px;
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            display: none;
+        }
+
+        .token-display.show {
+            display: block;
+        }
+
+        .info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #1565c0;
+        }
+
+        .error {
+            background: #ffebee;
+            border-left: 4px solid #f44336;
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #c62828;
+            display: none;
+        }
+
+        .error.show {
+            display: block;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            color: #667eea;
+            margin-top: 15px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .copy-btn {
+            background: #28a745;
+            margin-top: 10px;
+            width: auto;
+            padding: 8px 16px;
+            font-size: 12px;
+        }
+
+        .copy-btn:hover {
+            background: #218838;
+        }
+
+        .config {
+            font-size: 12px;
+            color: #666;
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+
+        .config-item {
+            margin-bottom: 8px;
+        }
+
+        .config-label {
+            font-weight: 600;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Asana OAuth Authentication</h1>
+        <p class="subtitle">Connect to Asana MCP Server</p>
+
+        <!-- Step 1: Start OAuth Flow -->
+        <div class="step">
+            <div class="step-title">Step 1: Start OAuth Flow</div>
+            <button id="startOAuth" onclick="startOAuthFlow()">
+                🚀 Authenticate with Asana
+            </button>
+            <div class="info">
+                Click the button above to open Asana's authorization page in a new window.
+            </div>
+            <div id="error1" class="error"></div>
+        </div>
+
+        <!-- Step 2: Access Token -->
+        <div class="step">
+            <div class="step-title">Step 2: Your Access Token</div>
+            <div id="loading3" class="loading">
+                <p>⏳ Exchanging authorization code for access token...</p>
+            </div>
+            <div id="tokenDisplay" class="token-display">
+                <strong>Access Token:</strong><br>
+                <span id="tokenValue"></span>
+                <button class="copy-btn" onclick="copyToken()">📋 Copy Token</button>
+            </div>
+            <div id="error3" class="error"></div>
+            <div class="info">
+                Use this token to connect to Asana MCP server and fetch available tools.
+            </div>
+        </div>
+
+        <!-- Configuration -->
+        <div class="config">
+            <div class="config-item">
+                <span class="config-label">Client ID:</span> 38TvGGPlI0PCzc0u (MCP-registered)
+            </div>
+            <div class="config-item">
+                <span class="config-label">Auth URL:</span> https://mcp.asana.com/authorize
+            </div>
+            <div class="config-item">
+                <span class="config-label">Token URL:</span> https://mcp.asana.com/token
+            </div>
+            <div class="config-item">
+                <span class="config-label">Redirect URI:</span> <span id="redirectUri"></span>
+            </div>
+            <div class="config-item">
+                <span class="config-label">Note:</span> Using MCP OAuth (not standard Asana OAuth)
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const CONFIG = {
+            // MCP-registered client credentials (not standard Asana OAuth)
+            clientId: '38TvGGPlI0PCzc0u',
+            clientSecret: 'bkRBZmZdTsJaiJKLMHzIb3wZd2DvPO9A',
+            authUrl: 'https://mcp.asana.com/authorize',
+            tokenUrl: 'https://mcp.asana.com/token',
+            redirectUri: window.location.origin + window.location.pathname,
+            state: Math.random().toString(36).substring(7), // Random state for security
+            apiServer: 'http://localhost:3000'  // Use backend API for OAuth
+        };
+
+        // Display redirect URI
+        document.getElementById('redirectUri').textContent = CONFIG.redirectUri;
+
+        let authWindow = null;
+
+        function startOAuthFlow() {
+            const startBtn = document.getElementById('startOAuth');
+            const error = document.getElementById('error1');
+
+            startBtn.disabled = true;
+            error.classList.remove('show');
+
+            try {
+                // Save state to localStorage
+                localStorage.setItem('oauth_state', CONFIG.state);
+
+                // Build authorization URL (Asana standard OAuth, not PKCE)
+                // Note: Asana may require scopes to be enabled in the app settings first
+                // Common scopes: openid, email, profile
+                // If you get forbidden_scopes error, remove the scope parameter or check your app settings
+                const params = new URLSearchParams({
+                    client_id: CONFIG.clientId,
+                    redirect_uri: CONFIG.redirectUri,
+                    response_type: 'code',
+                    state: CONFIG.state
+                    // scope: 'openid email profile'  // Uncomment and adjust based on your app's enabled scopes
+                });
+
+                const authorizationUrl = `${CONFIG.authUrl}?${params.toString()}`;
+
+                // Open authorization URL in popup
+                const width = 600;
+                const height = 700;
+                const left = (screen.width - width) / 2;
+                const top = (screen.height - height) / 2;
+
+                authWindow = window.open(
+                    authorizationUrl,
+                    'Asana OAuth',
+                    `width=${width},height=${height},left=${left},top=${top}`
+                );
+
+                if (!authWindow) {
+                    throw new Error('Popup was blocked. Please allow popups for this site.');
+                }
+
+                startBtn.textContent = '✓ Waiting for authorization...';
+
+            } catch (err) {
+                error.textContent = `Error: ${err.message}`;
+                error.classList.add('show');
+                startBtn.disabled = false;
+                startBtn.textContent = '🔄 Try Again';
+            }
+        }
+
+        async function exchangeToken(code) {
+            const loading = document.getElementById('loading3');
+            const error = document.getElementById('error3');
+            const tokenDisplay = document.getElementById('tokenDisplay');
+
+            loading.classList.add('show');
+            error.classList.remove('show');
+
+            try {
+                // Exchange code for token using standard OAuth 2.0
+                const params = new URLSearchParams({
+                    grant_type: 'authorization_code',
+                    client_id: CONFIG.clientId,
+                    client_secret: CONFIG.clientSecret,
+                    redirect_uri: CONFIG.redirectUri,
+                    code: code
+                });
+
+                const response = await fetch(CONFIG.tokenUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: params.toString()
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorData}`);
+                }
+
+                const tokens = await response.json();
+
+                // Display access token
+                document.getElementById('tokenValue').textContent = tokens.access_token;
+                tokenDisplay.classList.add('show');
+                loading.classList.remove('show');
+
+                // Store token in localStorage for easy access
+                localStorage.setItem('asana_access_token', tokens.access_token);
+                if (tokens.refresh_token) {
+                    localStorage.setItem('asana_refresh_token', tokens.refresh_token);
+                }
+
+                // Close the popup if still open
+                if (authWindow && !authWindow.closed) {
+                    authWindow.close();
+                }
+
+            } catch (err) {
+                loading.classList.remove('show');
+                error.textContent = `Error: ${err.message}`;
+                error.classList.add('show');
+            }
+        }
+
+        function copyToken() {
+            const tokenValue = document.getElementById('tokenValue').textContent;
+            navigator.clipboard.writeText(tokenValue).then(() => {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = '✓ Copied!';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 2000);
+            });
+        }
+
+        // Check for authorization code in URL (callback)
+        window.addEventListener('load', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            const state = urlParams.get('state');
+            const error = urlParams.get('error');
+
+            if (error) {
+                document.getElementById('error3').textContent = `OAuth Error: ${error}`;
+                document.getElementById('error3').classList.add('show');
+            } else if (code) {
+                // Verify state
+                const savedState = localStorage.getItem('oauth_state');
+                if (state !== savedState) {
+                    document.getElementById('error3').textContent = 'Invalid state parameter. Possible CSRF attack.';
+                    document.getElementById('error3').classList.add('show');
+                    return;
+                }
+
+                exchangeToken(code);
+
+                // Clear the code from URL
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        });
+
+        // Display saved token if exists
+        window.addEventListener('load', () => {
+            const savedToken = localStorage.getItem('asana_access_token');
+            if (savedToken && !document.getElementById('tokenValue').textContent) {
+                document.getElementById('tokenValue').textContent = savedToken;
+                document.getElementById('tokenDisplay').classList.add('show');
+            }
+        });
+    </script>
+</body>
+</html>
