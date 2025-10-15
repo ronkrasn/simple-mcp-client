@@ -1,293 +1,382 @@
-# Simple MCP Client
+# Simple MCP Client - NestJS REST API
 
-A straightforward TypeScript client that connects to MCP (Model Context Protocol) servers using the official `mcp-client` package. Supports multiple transport types: SSE, HTTP Streaming, and stdio.
+A production-ready NestJS REST API server for connecting to MCP (Model Context Protocol) servers. Features full Swagger documentation, OAuth support for Asana MCP, and multiple connection methods including support for remote MCP servers via `mcp-remote`.
 
-## Features
+## 🌟 Features
 
-- 🔌 Multiple transport types: **SSE**, **HTTP Stream**, and **stdio**
-- 🛠️ Automatic tool discovery from MCP servers
-- 📊 Multiple server testing
-- 🚀 Easy to use API built on official `mcp-client` package
-- 📘 Full TypeScript support with type definitions
-- 🎯 Strict type safety
-- ⚡ Works with any MCP-compliant server
+- 🚀 **REST API Server** built with NestJS and TypeScript
+- 📚 **Full Swagger/OpenAPI Documentation** at `/api`
+- 🔌 **Multiple Transport Types**: SSE, HTTP Stream, and stdio
+- 🛠️ **Automatic Tool Discovery** from MCP servers
+- 🔐 **OAuth Integration** for Asana MCP server
+- 🌐 **Remote MCP Support** via `mcp-remote` package
+- 📊 **Multiple Server Testing** in parallel
+- ⚡ **Works with any MCP-compliant server**
+- 🎯 **Full TypeScript Support** with strict type safety
 
-## Installation
+## 📋 Quick Start
+
+### Installation
 
 ```bash
 cd simple-mcp-client
 npm install
 ```
 
-## Building
+### Building
 
 ```bash
 # Build TypeScript to JavaScript
 npm run build
 
-# Development mode (runs TypeScript directly)
-npm run dev
+# Start the server (production)
+npm run start:server
+
+# Development mode with auto-reload
+npm run dev:server
 ```
 
-## Usage
+### Access the API
 
-### Command Line
+Once the server is running:
+
+- **API Server**: http://localhost:3000
+- **Swagger Documentation**: http://localhost:3000/api
+- **OAuth Helper**: http://localhost:3000/oauth/oauth-asana.html
+
+## 🔥 API Endpoints
+
+### 1. Get Tools from MCP Server
+
+**Endpoint**: `POST /mcp/tools`
+
+Connects to an MCP server and retrieves all available tools. Supports SSE, HTTP Stream, and stdio transports.
+
+#### stdio Example (Local MCP Server)
 
 ```bash
-# HTTP Stream (default)
-npm start -- https://api.example.com/mcp
-
-# SSE connection
-npm start -- https://mcp.asana.com/sse --type=sse
-
-# stdio connection (local MCP server)
-npm start -- npx --type=stdio @modelcontextprotocol/server-memory
-
-# Development mode
-npm run dev https://api.example.com/mcp
+curl -X POST http://localhost:3000/mcp/tools \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "stdio",
+    "command": "npx",
+    "args": ["-y", "@modelcontextprotocol/server-memory"]
+  }'
 ```
 
-### Programmatic API
+#### SSE Example (Remote MCP Server)
 
-#### TypeScript/ES Modules
-
-```typescript
-import { SimpleMCPClient } from './index.js';
-
-const client = new SimpleMCPClient();
-
-// Example 1: Connect via HTTP Stream
-const httpResult = await client.getTools({
-  url: 'https://api.example.com/mcp',
-  type: 'httpStream'
-});
-
-// Example 2: Connect via SSE
-const sseResult = await client.getTools({
-  url: 'https://mcp.asana.com/sse',
-  type: 'sse'
-});
-
-// Example 3: Connect via stdio (local server)
-const stdioResult = await client.getTools({
-  type: 'stdio',
-  command: 'npx',
-  args: ['-y', '@modelcontextprotocol/server-memory']
-});
-
-// Result format (fully typed)
-console.log(stdioResult);
-// {
-//   success: true,
-//   url: 'stdio',
-//   toolCount: 9,
-//   tools: [
-//     { name: 'create_entities', description: '...' },
-//     { name: 'create_relations', description: '...' },
-//     ...
-//   ]
-// }
+```bash
+curl -X POST http://localhost:3000/mcp/tools \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://mcp.asana.com/sse",
+    "type": "sse",
+    "token": "YOUR_ACCESS_TOKEN"
+  }'
 ```
 
-#### Call Tools
+### 2. Get Tools via mcp-remote (Recommended for Remote Servers)
 
-```typescript
-// Call a tool on an MCP server
-const result = await client.callTool(
-  {
-    type: 'stdio',
-    command: 'npx',
-    args: ['-y', '@modelcontextprotocol/server-memory']
-  },
-  'create_entities',
-  {
-    entities: [
-      { name: 'John', entityType: 'person', observations: ['software engineer'] }
+**Endpoint**: `POST /mcp/tools-remote`
+
+Uses `mcp-remote` package to connect to remote MCP servers with proper OAuth handling. **This is the recommended method for Asana MCP and other remote SSE servers.**
+
+#### Example Request
+
+```bash
+curl -X POST http://localhost:3000/mcp/tools-remote \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://mcp.asana.com/sse",
+    "type": "sse",
+    "token": "YOUR_ACCESS_TOKEN"
+  }'
+```
+
+#### Example Response
+
+```json
+{
+  "success": true,
+  "url": "https://mcp.asana.com/sse",
+  "toolCount": 43,
+  "tools": [
+    {
+      "name": "asana_get_attachment",
+      "description": "Get detailed attachment data...",
+      "inputSchema": { ... }
+    },
+    {
+      "name": "asana_get_tasks",
+      "description": "List tasks in a project...",
+      "inputSchema": { ... }
+    },
+    ...
+  ]
+}
+```
+
+**Key Advantages**:
+- ✅ Successfully retrieves all 43 Asana MCP tools
+- ✅ Handles OAuth tokens properly via mcp-remote
+- ✅ Uses JSON-RPC communication like MCP Inspector
+- ✅ Works reliably with Asana MCP and other remote servers
+
+### 3. Call a Tool
+
+**Endpoint**: `POST /mcp/call-tool`
+
+Executes a specific tool on an MCP server with provided arguments.
+
+```bash
+curl -X POST http://localhost:3000/mcp/call-tool \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "stdio",
+    "command": "npx",
+    "args": ["-y", "@modelcontextprotocol/server-memory"],
+    "toolName": "create_entities",
+    "arguments": {
+      "entities": [{
+        "name": "Alice",
+        "entityType": "person",
+        "observations": ["Software engineer", "Works at Tech Corp"]
+      }]
+    }
+  }'
+```
+
+### 4. Test Multiple Servers
+
+**Endpoint**: `POST /mcp/test-multiple`
+
+Tests connectivity to multiple MCP servers simultaneously.
+
+```bash
+curl -X POST http://localhost:3000/mcp/test-multiple \
+  -H "Content-Type: application/json" \
+  -d '{
+    "servers": [
+      {
+        "url": "https://mcp.asana.com/sse",
+        "type": "sse",
+        "token": "YOUR_TOKEN"
+      },
+      {
+        "type": "stdio",
+        "command": "npx",
+        "args": ["-y", "@modelcontextprotocol/server-memory"]
+      }
     ]
-  }
-);
-
-console.log(result);
+  }'
 ```
 
-### Test Multiple Servers
+## 🔐 OAuth Integration for Asana MCP
 
-```typescript
-import type { ServerTestConfig } from './index.js';
+The server includes full OAuth support for Asana MCP server authentication.
 
-const servers: ServerTestConfig[] = [
-  {
-    name: 'Asana MCP (SSE)',
-    url: 'https://mcp.asana.com/sse',
-    type: 'sse'
-  },
-  {
-    name: 'Memory Server (stdio)',
-    type: 'stdio',
-    command: 'npx',
-    args: ['-y', '@modelcontextprotocol/server-memory']
-  },
-  {
-    name: 'Custom API (HTTP)',
-    url: 'https://api.company.com/mcp',
-    type: 'httpStream'
-  }
-];
+### Method 1: Browser OAuth Flow (Easy)
 
-const results = await client.testMultipleServers(servers);
+1. **Start OAuth Flow**:
+   ```
+   GET http://localhost:3000/mcp/oauth/start?clientId=YOUR_CLIENT_ID&clientSecret=YOUR_CLIENT_SECRET
+   ```
+
+2. **Authorize** in your browser (redirects to Asana)
+
+3. **Get your token** from the success page
+
+4. **Use the token** with `/mcp/tools-remote`:
+   ```bash
+   curl -X POST http://localhost:3000/mcp/tools-remote \
+     -H "Content-Type: application/json" \
+     -d '{
+       "url": "https://mcp.asana.com/sse",
+       "type": "sse",
+       "token": "YOUR_ACCESS_TOKEN"
+     }'
+   ```
+
+### Method 2: Programmatic OAuth (API)
+
+**Step 1**: Generate Authorization URL
+
+```bash
+curl -X POST http://localhost:3000/mcp/oauth/authorize-url \
+  -H "Content-Type: application/json" \
+  -d '{
+    "clientId": "YOUR_CLIENT_ID",
+    "redirectUri": "http://localhost:3000/mcp/oauth/callback",
+    "serverUrl": "https://mcp.asana.com",
+    "oauthAuthUrl": "https://app.asana.com/-/oauth_authorize",
+    "oauthScopes": "default openid email"
+  }'
 ```
 
-## Configuration Options
+**Step 2**: Direct user to the `authorizationUrl` from response
 
-### ServerConfig Interface
+**Step 3**: Exchange code for token
 
-| Option | Type | Description |
-|--------|------|-------------|
-| `url` | string? | MCP server URL (for SSE/HTTP) |
-| `type` | 'sse' \| 'httpStream' \| 'stdio'? | Connection type (default: httpStream) |
-| `command` | string? | Command for stdio connections |
-| `args` | string[]? | Arguments for stdio command |
-| `env` | Record<string, string>? | Environment variables for stdio |
-| `cwd` | string? | Working directory for stdio |
+```bash
+curl -X POST http://localhost:3000/mcp/oauth/exchange-token \
+  -H "Content-Type: application/json" \
+  -d '{
+    "code": "AUTHORIZATION_CODE",
+    "clientId": "YOUR_CLIENT_ID",
+    "clientSecret": "YOUR_CLIENT_SECRET",
+    "redirectUri": "http://localhost:3000/mcp/oauth/callback",
+    "serverUrl": "https://mcp.asana.com",
+    "oauthTokenUrl": "https://app.asana.com/-/oauth_token"
+  }'
+```
 
-### ToolsResult Interface
+## 📖 API Documentation
+
+### Full Interactive Documentation
+
+Visit **http://localhost:3000/api** for the complete Swagger UI documentation with:
+- All available endpoints
+- Request/response schemas
+- Interactive API testing
+- Example requests
+- Authentication details
+
+### Configuration Options
+
+#### ConnectMCPDto
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `url` | string | Conditional | MCP server URL (required for SSE/HTTP) |
+| `type` | 'sse' \| 'httpStream' \| 'stdio' | No | Connection type (default: httpStream) |
+| `token` | string | No | OAuth access token for SSE connections |
+| `headers` | object | No | Custom headers for HTTP requests |
+| `command` | string | Conditional | Command for stdio (required for stdio) |
+| `args` | string[] | No | Arguments for stdio command |
+| `env` | object | No | Environment variables for stdio |
+| `cwd` | string | No | Working directory for stdio |
+
+#### MCPToolsResponseDto
 
 | Field | Type | Description |
 |-------|------|-------------|
 | `success` | boolean | Whether the operation succeeded |
 | `url` | string? | The MCP server URL |
 | `toolCount` | number? | Number of tools found |
-| `tools` | Tool[] | Array of discovered tools (from @modelcontextprotocol/sdk) |
+| `tools` | Tool[] | Array of discovered tools |
 | `error` | string? | Error message if failed |
+| `message` | string? | Additional information |
+| `serverInfo` | object? | Server name and version |
 
-## Examples
+## 🎯 Working with Asana MCP
 
-Run the examples:
+### Complete Example
 
 ```bash
-# Run compiled examples
-npm test
+# 1. Get tools using mcp-remote (recommended)
+curl -X POST http://localhost:3000/mcp/tools-remote \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://mcp.asana.com/sse",
+    "type": "sse",
+    "token": "YOUR_ACCESS_TOKEN"
+  }'
 
-# Run TypeScript examples directly (development)
-npm run dev:test
-npm run dev:quick-test
+# 2. Call a tool (e.g., get workspaces)
+curl -X POST http://localhost:3000/mcp/call-tool \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://mcp.asana.com/sse",
+    "type": "sse",
+    "token": "YOUR_ACCESS_TOKEN",
+    "toolName": "asana_get_workspaces",
+    "arguments": {}
+  }'
 ```
 
-Example output from quick test:
-```
-⚡ Quick MCP Server Test
+### Available Asana MCP Tools
 
-🔍 Test 1: Connecting to MCP Memory Server (stdio)...
-✅ SUCCESS: Found 9 tools!
+The Asana MCP server provides **43 tools** for managing your Asana workspace:
 
-Available tools:
-  1. create_entities
-  2. create_relations
-  3. add_observations
-  ...
-```
+**Attachments**: `asana_get_attachment`, `asana_get_attachments_for_object`
 
-Example files:
-- `examples/test.ts` - Complete usage examples (SSE, HTTP, stdio)
-- `examples/quick-test.ts` - Quick server testing
+**Goals**: `asana_get_goals`, `asana_get_goal`, `asana_create_goal`, `asana_update_goal`, `asana_update_goal_metric`, `asana_get_parent_goals_for_goal`
 
-## How It Works
+**Portfolios**: `asana_get_portfolio`, `asana_get_portfolios`, `asana_get_items_for_portfolio`
 
-This client uses the official **[mcp-client](https://github.com/punkpeye/mcp-client)** package, which wraps the `@modelcontextprotocol/sdk` for a cleaner API:
+**Projects**: `asana_get_project`, `asana_get_projects`, `asana_get_project_sections`, `asana_get_project_status`, `asana_get_project_statuses`, `asana_create_project_status`, `asana_get_project_task_counts`, `asana_get_projects_for_team`
 
-1. **Connection**: Creates an MCPClient instance and connects using the specified transport
-2. **Tool Discovery**: Calls `getAllTools()` to discover available tools
-3. **Tool Execution**: Use `callTool()` to execute tools with typed parameters
-4. **Response**: Returns structured results with full TypeScript types
+**Tasks**: `asana_get_task`, `asana_get_tasks`, `asana_create_task`, `asana_update_task`, `asana_delete_task`, `asana_duplicate_task`, `asana_get_subtasks_for_task`, `asana_set_parent_for_task`, `asana_search_tasks_for_workspace`, `asana_add_dependencies_for_task`, `asana_add_dependents_for_task`
 
-### Transport Types
+**Stories (Comments)**: `asana_get_stories_for_task`, `asana_create_story_for_task`
 
-- **httpStream**: Streaming HTTP connection (default)
-- **sse**: Server-Sent Events for real-time updates
-- **stdio**: Local process communication (ideal for local MCP servers)
+**Tags**: `asana_get_tags_for_workspace`, `asana_create_tag_for_workspace`
 
-## Supported MCP Servers
+**Teams**: `asana_get_team`, `asana_get_teams_for_workspace`, `asana_get_teams_for_user`
 
-This client works with any MCP-compliant server:
+**Users**: `asana_get_user`, `asana_get_users_for_workspace`, `asana_get_favorites_for_user`
 
-- ✅ **stdio servers**: Local MCP servers via process communication
-  - `@modelcontextprotocol/server-memory`
-  - `@modelcontextprotocol/server-filesystem`
-  - Custom stdio servers
-- ✅ **HTTP servers**: Remote MCP servers via HTTP streaming
-- ✅ **SSE servers**: Real-time MCP servers via Server-Sent Events
-  - Asana MCP Server
-  - Custom SSE implementations
+**Workspaces**: `asana_get_workspaces`, `asana_get_workspace`, `asana_typeahead_search`
 
-## Error Handling
+**Custom Fields**: `asana_get_custom_field_settings_for_project`
 
-The client gracefully handles:
-- Connection failures
-- Network timeouts
-- Invalid server responses
-- Missing tools
-- Malformed requests
+## 🔧 Technical Implementation
 
-All errors are returned in the result object rather than throwing exceptions, making it easy to handle failures gracefully.
+### How /mcp/tools-remote Works
 
-## TypeScript Support
+The `/mcp/tools-remote` endpoint uses the same approach as the **MCP Inspector**:
 
-This project is written in TypeScript and provides full type definitions from the official SDK:
+1. **Spawns mcp-remote-client** process with stdin/stdout pipes
+2. **Sends JSON-RPC `initialize` request** via stdin to establish MCP session
+3. **Waits for initialization response**
+4. **Sends `tools/list` request** via stdin
+5. **Parses multi-line JSON** from stderr (where mcp-remote outputs messages)
+6. **Extracts tools array** from JSON-RPC response
+7. **Returns formatted response** to client
 
-- **Type-safe API**: All methods and interfaces are fully typed
-- **IntelliSense support**: Get autocomplete in your IDE
-- **Compile-time safety**: Catch errors before runtime
-- **Type definitions**: Uses types from `@modelcontextprotocol/sdk`
+This implementation successfully retrieves all tools from Asana MCP and other remote servers.
 
-### Available Types
-
-```typescript
-import type { Tool } from '@modelcontextprotocol/sdk/types.js';
-
-export interface ServerConfig {
-  name?: string;
-  url?: string;
-  host?: string;
-  token?: string;
-  type?: 'sse' | 'httpStream' | 'stdio';
-  command?: string;
-  args?: string[];
-  env?: Record<string, string>;
-  cwd?: string;
-}
-
-export interface ToolsResult {
-  success: boolean;
-  host?: string;
-  url?: string;
-  toolCount?: number;
-  tools: Tool[];
-  error?: string;
-  serverInfo?: {
-    name?: string;
-    version?: string;
-  };
-}
-```
-
-## Project Structure
+### Architecture
 
 ```
 simple-mcp-client/
-├── index.ts              # Main client using mcp-client
-├── simple-client.ts      # Legacy zero-dependency client
-├── examples/
-│   ├── test.ts          # Complete examples (SSE, HTTP, stdio)
-│   └── quick-test.ts    # Quick testing
-├── dist/                # Compiled JavaScript output
-│   ├── index.js
-│   ├── index.d.ts       # Type definitions
-│   └── ...
-├── tsconfig.json        # TypeScript configuration
-└── package.json         # Project configuration
+├── src/
+│   ├── main.ts                    # NestJS application entry
+│   ├── controllers/
+│   │   └── mcp.controller.ts      # REST API endpoints
+│   ├── services/
+│   │   └── mcp.service.ts         # MCP client logic
+│   ├── dto/
+│   │   ├── connect-mcp.dto.ts     # Request DTOs
+│   │   └── mcp-response.dto.ts    # Response DTOs
+│   └── modules/
+│       └── mcp.module.ts          # NestJS module
+├── dist/                          # Compiled JavaScript
+├── oauth/                         # OAuth helper pages
+├── test-mcp-remote.js            # Test scripts
+└── package.json
 ```
 
-## Development
+## 🚀 Supported MCP Servers
+
+### Tested and Working
+
+- ✅ **Asana MCP** (`https://mcp.asana.com/sse`) - 43 tools
+- ✅ **Memory Server** (`@modelcontextprotocol/server-memory`) - stdio
+- ✅ **Filesystem Server** (`@modelcontextprotocol/server-filesystem`) - stdio
+- ✅ **Custom HTTP Stream servers**
+- ✅ **Custom SSE servers with mcp-remote**
+
+### Connection Methods by Server Type
+
+| Server Type | Recommended Endpoint | Transport |
+|-------------|---------------------|-----------|
+| Local (stdio) | `/mcp/tools` | stdio |
+| Remote SSE | `/mcp/tools-remote` | sse-only |
+| HTTP Stream | `/mcp/tools` | httpStream |
+
+## 🛠️ Development
 
 ```bash
 # Install dependencies
@@ -296,19 +385,47 @@ npm install
 # Build TypeScript
 npm run build
 
-# Run in development mode (no build needed)
-npm run dev
+# Start server (production)
+npm run start:server
 
-# Run tests in development mode
-npm run dev:test
-npm run dev:quick-test
+# Development mode with auto-reload
+npm run dev:server
+
+# Run tests
+npm test
 ```
 
-## Dependencies
+### Environment
 
-- **[mcp-client](https://github.com/punkpeye/mcp-client)**: Clean API wrapper for MCP SDK
-- **[@modelcontextprotocol/sdk](https://www.npmjs.com/package/@modelcontextprotocol/sdk)**: Official Model Context Protocol SDK
+The server runs on **port 3000** by default. You can change this in `src/main.ts`.
 
-## License
+## 📦 Dependencies
+
+### Core
+- **@nestjs/common**, **@nestjs/core**, **@nestjs/platform-express**: NestJS framework
+- **@nestjs/swagger**: OpenAPI/Swagger documentation
+- **mcp-client**: Clean API wrapper for MCP SDK
+- **@modelcontextprotocol/sdk**: Official Model Context Protocol SDK
+- **mcp-remote**: Remote MCP server support
+
+### Development
+- **TypeScript**: Type safety and modern JavaScript features
+- **tsx**: TypeScript execution for development
+
+## 🎓 Resources
+
+- [MCP Specification](https://spec.modelcontextprotocol.io/)
+- [MCP SDK Documentation](https://github.com/modelcontextprotocol/typescript-sdk)
+- [Asana MCP Server](https://github.com/modelcontextprotocol/servers/tree/main/src/asana)
+- [NestJS Documentation](https://docs.nestjs.com/)
+
+## 📝 License
 
 MIT
+
+## 🙏 Acknowledgments
+
+- Built with the official [@modelcontextprotocol/sdk](https://www.npmjs.com/package/@modelcontextprotocol/sdk)
+- Uses [mcp-client](https://github.com/punkpeye/mcp-client) for simplified API
+- Uses [mcp-remote](https://www.npmjs.com/package/mcp-remote) for remote server support
+- Powered by [NestJS](https://nestjs.com/)
