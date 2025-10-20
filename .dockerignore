@@ -1,0 +1,46 @@
+# Node
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Build artifacts
+dist
+*.tsbuildinfo
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Documentation
+*.md
+!README.md
+
+# Tests
+test
+tests
+*.test.ts
+*.test.js
+*.spec.ts
+*.spec.js
+
+# Examples
+examples
+
+# Misc
+.DS_Store
+*.log
+coverage
+.nyc_output

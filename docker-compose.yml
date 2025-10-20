@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  mcp-client:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: simple-mcp-client
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      # Uncomment and set your Asana credentials if needed
+      # - ASANA_CLIENT_ID=${ASANA_CLIENT_ID}
+      # - ASANA_CLIENT_SECRET=${ASANA_CLIENT_SECRET}
+    env_file:
+      - .env  # Optional: load from .env file if it exists
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/api', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    networks:
+      - mcp-network
+
+networks:
+  mcp-network:
+    driver: bridge
