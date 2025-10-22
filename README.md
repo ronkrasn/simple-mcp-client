@@ -40,9 +40,11 @@ npm run dev:server
 
 Once the server is running:
 
-- **API Server**: http://localhost:3000
-- **Swagger Documentation**: http://localhost:3000/api
-- **OAuth Helper**: http://localhost:3000/oauth/oauth-asana.html
+- **API Server**: https://localhost:3000
+- **Swagger Documentation**: https://localhost:3000/api
+- **OAuth Helper**: https://localhost:3000/oauth/oauth-asana.html
+
+**Note**: By default, the server uses HTTPS with self-signed certificates. Your browser may show a security warning - this is normal for development. See the [SSL/HTTPS Configuration](#sslhttps-configuration) section below for more details.
 
 ## 🔥 API Endpoints
 
@@ -55,7 +57,7 @@ Connects to an MCP server and retrieves all available tools. Supports SSE, HTTP 
 #### stdio Example (Local MCP Server)
 
 ```bash
-curl -X POST http://localhost:3000/mcp/tools \
+curl -k -X POST https://localhost:3000/mcp/tools \
   -H "Content-Type: application/json" \
   -d '{
     "type": "stdio",
@@ -67,7 +69,7 @@ curl -X POST http://localhost:3000/mcp/tools \
 #### SSE Example (Remote MCP Server)
 
 ```bash
-curl -X POST http://localhost:3000/mcp/tools \
+curl -k -X POST https://localhost:3000/mcp/tools \
   -H "Content-Type: application/json" \
   -d '{
     "url": "https://mcp.asana.com/sse",
@@ -75,6 +77,8 @@ curl -X POST http://localhost:3000/mcp/tools \
     "token": "YOUR_ACCESS_TOKEN"
   }'
 ```
+
+**Note**: The `-k` flag allows curl to work with self-signed certificates. Remove it if using a valid SSL certificate.
 
 ### 2. Get Tools via mcp-remote (Recommended for Remote Servers)
 
@@ -85,7 +89,7 @@ Uses `mcp-remote` package to connect to remote MCP servers with proper OAuth han
 #### Example Request
 
 ```bash
-curl -X POST http://localhost:3000/mcp/tools-remote \
+curl -k -X POST https://localhost:3000/mcp/tools-remote \
   -H "Content-Type: application/json" \
   -d '{
     "url": "https://mcp.asana.com/sse",
@@ -130,7 +134,7 @@ curl -X POST http://localhost:3000/mcp/tools-remote \
 Executes a specific tool on an MCP server with provided arguments.
 
 ```bash
-curl -X POST http://localhost:3000/mcp/call-tool \
+curl -k -X POST https://localhost:3000/mcp/call-tool \
   -H "Content-Type: application/json" \
   -d '{
     "type": "stdio",
@@ -154,7 +158,7 @@ curl -X POST http://localhost:3000/mcp/call-tool \
 Tests connectivity to multiple MCP servers simultaneously.
 
 ```bash
-curl -X POST http://localhost:3000/mcp/test-multiple \
+curl -k -X POST https://localhost:3000/mcp/test-multiple \
   -H "Content-Type: application/json" \
   -d '{
     "servers": [
@@ -180,7 +184,7 @@ The server includes full OAuth support for Asana MCP server authentication.
 
 1. **Start OAuth Flow**:
    ```
-   GET http://localhost:3000/mcp/oauth/start?clientId=YOUR_CLIENT_ID&clientSecret=YOUR_CLIENT_SECRET
+   GET https://localhost:3000/mcp/oauth/start?clientId=YOUR_CLIENT_ID&clientSecret=YOUR_CLIENT_SECRET
    ```
 
 2. **Authorize** in your browser (redirects to Asana)
@@ -189,7 +193,7 @@ The server includes full OAuth support for Asana MCP server authentication.
 
 4. **Use the token** with `/mcp/tools-remote`:
    ```bash
-   curl -X POST http://localhost:3000/mcp/tools-remote \
+   curl -k -X POST https://localhost:3000/mcp/tools-remote \
      -H "Content-Type: application/json" \
      -d '{
        "url": "https://mcp.asana.com/sse",
@@ -203,11 +207,11 @@ The server includes full OAuth support for Asana MCP server authentication.
 **Step 1**: Generate Authorization URL
 
 ```bash
-curl -X POST http://localhost:3000/mcp/oauth/authorize-url \
+curl -k -X POST https://localhost:3000/mcp/oauth/authorize-url \
   -H "Content-Type: application/json" \
   -d '{
     "clientId": "YOUR_CLIENT_ID",
-    "redirectUri": "http://localhost:3000/mcp/oauth/callback",
+    "redirectUri": "https://localhost:3000/mcp/oauth/callback",
     "serverUrl": "https://mcp.asana.com",
     "oauthAuthUrl": "https://app.asana.com/-/oauth_authorize",
     "oauthScopes": "default openid email"
@@ -219,13 +223,13 @@ curl -X POST http://localhost:3000/mcp/oauth/authorize-url \
 **Step 3**: Exchange code for token
 
 ```bash
-curl -X POST http://localhost:3000/mcp/oauth/exchange-token \
+curl -k -X POST https://localhost:3000/mcp/oauth/exchange-token \
   -H "Content-Type: application/json" \
   -d '{
     "code": "AUTHORIZATION_CODE",
     "clientId": "YOUR_CLIENT_ID",
     "clientSecret": "YOUR_CLIENT_SECRET",
-    "redirectUri": "http://localhost:3000/mcp/oauth/callback",
+    "redirectUri": "https://localhost:3000/mcp/oauth/callback",
     "serverUrl": "https://mcp.asana.com",
     "oauthTokenUrl": "https://app.asana.com/-/oauth_token"
   }'
@@ -235,12 +239,14 @@ curl -X POST http://localhost:3000/mcp/oauth/exchange-token \
 
 ### Full Interactive Documentation
 
-Visit **http://localhost:3000/api** for the complete Swagger UI documentation with:
+Visit **https://localhost:3000/api** for the complete Swagger UI documentation with:
 - All available endpoints
 - Request/response schemas
 - Interactive API testing
 - Example requests
 - Authentication details
+
+**Note**: When accessing the Swagger UI with self-signed certificates, you may need to accept the security warning in your browser.
 
 ### Configuration Options
 
@@ -275,7 +281,7 @@ Visit **http://localhost:3000/api** for the complete Swagger UI documentation wi
 
 ```bash
 # 1. Get tools using mcp-remote (recommended)
-curl -X POST http://localhost:3000/mcp/tools-remote \
+curl -k -X POST https://localhost:3000/mcp/tools-remote \
   -H "Content-Type: application/json" \
   -d '{
     "url": "https://mcp.asana.com/sse",
@@ -284,7 +290,7 @@ curl -X POST http://localhost:3000/mcp/tools-remote \
   }'
 
 # 2. Call a tool (e.g., get workspaces)
-curl -X POST http://localhost:3000/mcp/call-tool \
+curl -k -X POST https://localhost:3000/mcp/call-tool \
   -H "Content-Type: application/json" \
   -d '{
     "url": "https://mcp.asana.com/sse",
@@ -397,7 +403,71 @@ npm test
 
 ### Environment
 
-The server runs on **port 3000** by default. You can change this in `src/main.ts`.
+The server runs on **port 3000** by default. You can change this by setting the `PORT` environment variable in your `.env` file.
+
+## 🔒 SSL/HTTPS Configuration
+
+By default, the server is configured to use HTTPS with self-signed SSL certificates for secure communication.
+
+### Quick Start
+
+The project includes generated self-signed SSL certificates in the `certs/` directory. To enable/disable SSL:
+
+1. **Edit your `.env` file**:
+   ```env
+   SSL_ENABLED=true  # Set to 'false' to use HTTP
+   ```
+
+2. **Start the server**:
+   ```bash
+   npm run dev:server
+   ```
+
+3. **Access the API** at `https://localhost:3000`
+
+### Using Self-Signed Certificates
+
+When using self-signed certificates, you'll need to accept security warnings:
+
+**In your browser**: Click "Advanced" → "Proceed to localhost (unsafe)"
+
+**With curl**: Use the `-k` or `--insecure` flag:
+```bash
+curl -k https://localhost:3000/mcp/tools
+```
+
+### Using Custom Certificates
+
+To use your own SSL certificates (e.g., from Let's Encrypt):
+
+1. **Place your certificate files** in the `certs/` directory or another location
+
+2. **Update your `.env` file**:
+   ```env
+   SSL_ENABLED=true
+   SSL_CERT_PATH=/path/to/your/cert.pem
+   SSL_KEY_PATH=/path/to/your/key.pem
+   ```
+
+3. **Restart the server**
+
+### Generating New Self-Signed Certificates
+
+If you need to regenerate the self-signed certificates:
+
+```bash
+openssl req -x509 -newkey rsa:4096 -keyout certs/key.pem -out certs/cert.pem -days 365 -nodes -subj "/C=US/ST=State/L=City/O=Organization/CN=localhost"
+```
+
+### Disabling SSL for Development
+
+If you prefer to use HTTP during development:
+
+1. **Set `SSL_ENABLED=false` in your `.env` file**
+
+2. **Restart the server**
+
+3. **Access the API** at `http://localhost:3000`
 
 ## 📦 Dependencies
 
