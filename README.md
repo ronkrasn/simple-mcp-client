@@ -14,7 +14,44 @@ A production-ready NestJS REST API server for connecting to MCP (Model Context P
 - ⚡ **Works with any MCP-compliant server**
 - 🎯 **Full TypeScript Support** with strict type safety
 
-## 📋 Quick Start
+## ⚡ Quick Start (Automated OAuth)
+
+The fastest way to get started with MCP OAuth authentication:
+
+### 1. Start the API server
+
+```bash
+npm install
+npm run start:server
+```
+
+### 2. Run the OAuth script
+
+In a new terminal:
+
+```bash
+npm run oauth
+```
+
+This automated script will:
+1. ✅ Register a new OAuth client with the MCP server
+2. 🌐 Open your browser for authorization
+3. 🔑 Exchange the authorization code for an access token
+4. 💾 Save the token to `.mcp-token.json`
+
+### 3. Test your connection
+
+```bash
+npm run test-tools
+```
+
+This will fetch and display all available tools from the MCP server.
+
+**That's it!** 🎉 You now have a working MCP OAuth connection.
+
+---
+
+## 📋 Manual Setup
 
 ### Installation
 
@@ -178,31 +215,39 @@ curl -k -X POST https://localhost:3000/mcp/test-multiple \
 
 ## 🔐 OAuth Integration for Asana MCP
 
-The server includes full OAuth support for Asana MCP server authentication.
+The server includes full OAuth support with **dynamic client registration** (RFC 7591).
 
-### Method 1: Browser OAuth Flow (Easy)
+### Method 1: Automated Script (Easiest) ⭐
 
-1. **Start OAuth Flow**:
-   ```
-   GET https://localhost:3000/mcp/oauth/start?clientId=YOUR_CLIENT_ID&clientSecret=YOUR_CLIENT_SECRET
-   ```
+Use the automated OAuth script that handles everything for you:
 
-2. **Authorize** in your browser (redirects to Asana)
+```bash
+npm run oauth
+```
 
-3. **Get your token** from the success page
+This will:
+- ✅ Register a new client dynamically
+- 🌐 Open authorization in your browser
+- 🔑 Exchange code for token
+- 💾 Save token to `.mcp-token.json`
 
-4. **Use the token** with `/mcp/tools-remote`:
-   ```bash
-   curl -k -X POST https://localhost:3000/mcp/tools-remote \
-     -H "Content-Type: application/json" \
-     -d '{
-       "url": "https://mcp.asana.com/sse",
-       "type": "sse",
-       "token": "YOUR_ACCESS_TOKEN"
-     }'
-   ```
+Then test with:
+```bash
+npm run test-tools
+```
 
-### Method 2: Programmatic OAuth (API)
+See [MCP_OAUTH_GUIDE.md](./MCP_OAUTH_GUIDE.md) for detailed documentation.
+
+### Method 2: Web Interface
+
+Open in your browser:
+```
+https://localhost:3000/oauth-mcp.html
+```
+
+Follow the 3-step wizard to complete the OAuth flow.
+
+### Method 3: Manual API Calls
 
 **Step 1**: Generate Authorization URL
 

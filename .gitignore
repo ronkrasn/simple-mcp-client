@@ -21,3 +21,8 @@ node_modules/
 
 # SSL Certificates
 certs/
+
+# OAuth tokens and data
+.mcp-token.json
+.mcp-tools.json
+.env.production

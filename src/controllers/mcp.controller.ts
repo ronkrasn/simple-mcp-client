@@ -195,10 +195,76 @@ export class MCPController {
     return this.mcpService.testMultipleServers(body.servers);
   }
 
+  @Post('oauth/register')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Register a new OAuth client with MCP server',
+    description: 'Dynamically registers a new OAuth client with the MCP server (RFC 7591). Required before starting OAuth flow.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Client registered successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        client_id: { type: 'string' },
+        client_secret: { type: 'string' },
+        registration_access_token: { type: 'string' },
+        registration_client_uri: { type: 'string' },
+      },
+    },
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        registrationUrl: {
+          type: 'string',
+          example: 'https://mcp.asana.com/register',
+          description: 'OAuth registration endpoint URL'
+        },
+        redirectUris: {
+          type: 'array',
+          items: { type: 'string' },
+          example: ['http://localhost:3000/oauth/callback'],
+          description: 'Array of redirect URIs for OAuth callback'
+        },
+        clientName: {
+          type: 'string',
+          example: 'My MCP Client',
+          description: 'Name for your client application'
+        },
+        clientUri: {
+          type: 'string',
+          example: 'https://github.com/your-org/your-app',
+          description: 'Homepage URL for your client application'
+        },
+      },
+      required: ['registrationUrl', 'redirectUris'],
+    },
+  })
+  async registerOAuthClient(
+    @Body()
+    body: {
+      registrationUrl: string;
+      redirectUris: string[];
+      clientName?: string;
+      clientUri?: string;
+    },
+  ) {
+    this.logger.log('Registering new OAuth client');
+    return this.mcpService.registerOAuthClient(
+      body.registrationUrl,
+      body.redirectUris,
+      body.clientName,
+      body.clientUri,
+    );
+  }
+
   @Get('oauth/start')
   @ApiOperation({
-    summary: 'Start OAuth flow for Asana MCP',
-    description: 'Visit this URL in your browser to start MCP OAuth authentication. Use MCP-registered client credentials.',
+    summary: '[DEPRECATED] Use /oauth/register instead',
+    description: 'This endpoint is deprecated. Use POST /oauth/register to dynamically register a client, then use /oauth/authorize-url.',
   })
   @ApiQuery({ name: 'clientId', required: true, example: '38TvGGPlI0PCzc0u', description: 'Your MCP Client ID (from registration)' })
   @ApiQuery({ name: 'clientSecret', required: true, example: 'bkRBZmZdTsJaiJKLMHzIb3wZd2DvPO9A', description: 'Your MCP Client Secret (from registration)' })
@@ -207,7 +273,7 @@ export class MCPController {
     @Query('clientSecret') clientSecret: string,
     @Res() res: Response,
   ) {
-    this.logger.log(`Starting MCP OAuth flow for clientId: ${clientId}`);
+    this.logger.log(`[DEPRECATED] Starting MCP OAuth flow for clientId: ${clientId}`);
 
     // Store credentials in a temporary in-memory store (for callback)
     // In production, use a proper session store or database
@@ -373,7 +439,7 @@ export class MCPController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Exchange OAuth authorization code for access token',
-    description: 'Exchanges the authorization code received from OAuth callback for an access token.',
+    description: 'Exchanges the authorization code received from OAuth callback for an access token. Works with dynamically registered clients (no secret needed) or standard OAuth clients.',
   })
   @ApiResponse({
     status: 200,
@@ -392,15 +458,15 @@ export class MCPController {
     schema: {
       type: 'object',
       properties: {
-        code: { type: 'string' },
-        codeVerifier: { type: 'string', description: 'Required for MCP SDK OAuth, optional for custom OAuth (e.g., Asana)' },
-        clientId: { type: 'string' },
-        clientSecret: { type: 'string' },
-        redirectUri: { type: 'string' },
-        serverUrl: { type: 'string' },
-        oauthTokenUrl: { type: 'string', example: 'https://app.asana.com/-/oauth_token', description: 'Custom OAuth token URL (e.g., for Asana)' },
+        code: { type: 'string', description: 'Authorization code from OAuth callback' },
+        codeVerifier: { type: 'string', description: 'PKCE code verifier (required for MCP OAuth)' },
+        clientId: { type: 'string', description: 'Client ID from registration' },
+        clientSecret: { type: 'string', description: 'Client secret (optional for public clients registered with token_endpoint_auth_method=none)' },
+        redirectUri: { type: 'string', description: 'Redirect URI used during authorization' },
+        serverUrl: { type: 'string', example: 'https://mcp.asana.com', description: 'MCP server base URL' },
+        oauthTokenUrl: { type: 'string', example: 'https://app.asana.com/-/oauth_token', description: 'Custom OAuth token URL (e.g., for standard Asana OAuth)' },
       },
-      required: ['code', 'clientId', 'clientSecret', 'redirectUri', 'serverUrl'],
+      required: ['code', 'clientId', 'redirectUri', 'serverUrl'],
     },
   })
   async exchangeToken(
@@ -409,7 +475,7 @@ export class MCPController {
       code: string;
       codeVerifier?: string;
       clientId: string;
-      clientSecret: string;
+      clientSecret?: string;
       redirectUri: string;
       serverUrl: string;
       oauthTokenUrl?: string;

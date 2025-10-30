@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP OAuth - Dynamic Registration</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 700px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .step {
+            margin-bottom: 25px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .step.completed {
+            border-left-color: #28a745;
+            background: #f1f9f4;
+        }
+
+        .step-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .step-number {
+            background: #667eea;
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .step.completed .step-number {
+            background: #28a745;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+        }
+
+        button:hover:not(:disabled) {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .code-display {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 15px;
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            display: none;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .code-display.show {
+            display: block;
+        }
+
+        .info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 12px;
+            margin-top: 12px;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #1565c0;
+        }
+
+        .success {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            padding: 12px;
+            margin-top: 12px;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #2e7d32;
+            display: none;
+        }
+
+        .success.show {
+            display: block;
+        }
+
+        .error {
+            background: #ffebee;
+            border-left: 4px solid #f44336;
+            padding: 12px;
+            margin-top: 12px;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #c62828;
+            display: none;
+        }
+
+        .error.show {
+            display: block;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            color: #667eea;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .copy-btn {
+            background: #28a745;
+            margin-top: 10px;
+            width: auto;
+            padding: 8px 16px;
+            font-size: 12px;
+        }
+
+        .copy-btn:hover:not(:disabled) {
+            background: #218838;
+        }
+
+        .config {
+            font-size: 12px;
+            color: #666;
+            margin-top: 25px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+
+        .config-item {
+            margin-bottom: 8px;
+        }
+
+        .config-label {
+            font-weight: 600;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 MCP OAuth Authentication</h1>
+        <p class="subtitle">Using Dynamic Client Registration (RFC 7591)</p>
+
+        <!-- Step 1: Register Client -->
+        <div class="step" id="step1">
+            <div class="step-title">
+                <span class="step-number">1</span>
+                Register OAuth Client
+            </div>
+            <button id="registerBtn" onclick="registerClient()">
+                📝 Register New Client
+            </button>
+            <div id="loading1" class="loading">
+                <p>⏳ Registering client with MCP server...</p>
+            </div>
+            <div id="success1" class="success"></div>
+            <div id="error1" class="error"></div>
+            <div id="clientIdDisplay" class="code-display"></div>
+            <div class="info">
+                First, we register a new OAuth client with the MCP server. This is required before authentication.
+            </div>
+        </div>
+
+        <!-- Step 2: Start OAuth Flow -->
+        <div class="step" id="step2">
+            <div class="step-title">
+                <span class="step-number">2</span>
+                Authorize Application
+            </div>
+            <button id="authorizeBtn" onclick="startAuthorization()" disabled>
+                🚀 Authorize with MCP Server
+            </button>
+            <div id="loading2" class="loading">
+                <p>⏳ Generating authorization URL...</p>
+            </div>
+            <div id="error2" class="error"></div>
+            <div id="codeVerifierDisplay" class="code-display"></div>
+            <div class="info">
+                After registration, click to authorize the application. You'll be redirected to the MCP server for authentication.
+            </div>
+        </div>
+
+        <!-- Step 3: Access Token -->
+        <div class="step" id="step3">
+            <div class="step-title">
+                <span class="step-number">3</span>
+                Access Token Retrieved
+            </div>
+            <div id="loading3" class="loading">
+                <p>⏳ Exchanging authorization code for access token...</p>
+            </div>
+            <div id="success3" class="success"></div>
+            <div id="error3" class="error"></div>
+            <div id="tokenDisplay" class="code-display">
+                <strong style="color: #a6e22e;">Access Token:</strong><br>
+                <span id="tokenValue"></span>
+                <button class="copy-btn" onclick="copyToken()">📋 Copy Token</button>
+            </div>
+            <div class="info">
+                Use this token to authenticate with the MCP server and access its tools.
+            </div>
+        </div>
+
+        <!-- Configuration -->
+        <div class="config">
+            <div class="config-item">
+                <span class="config-label">MCP Server:</span> https://mcp.asana.com
+            </div>
+            <div class="config-item">
+                <span class="config-label">Registration URL:</span> https://mcp.asana.com/register
+            </div>
+            <div class="config-item">
+                <span class="config-label">Redirect URI:</span> <span id="redirectUri"></span>
+            </div>
+            <div class="config-item">
+                <span class="config-label">API Server:</span> <span id="apiServer"></span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Determine API server based on current location
+        const protocol = window.location.protocol;
+        const hostname = window.location.hostname;
+        const port = window.location.port || (protocol === 'https:' ? '443' : '80');
+        const apiServer = `${protocol}//${hostname}${port !== '80' && port !== '443' ? ':' + port : ''}`;
+
+        const CONFIG = {
+            mcpServerUrl: 'https://mcp.asana.com',
+            registrationUrl: 'https://mcp.asana.com/register',
+            apiServer: apiServer,
+            redirectUri: window.location.origin + window.location.pathname
+        };
+
+        // Display config
+        document.getElementById('redirectUri').textContent = CONFIG.redirectUri;
+        document.getElementById('apiServer').textContent = CONFIG.apiServer;
+
+        // Session state
+        let clientId = null;
+        let codeVerifier = null;
+        let authWindow = null;
+
+        // Load saved state from localStorage
+        window.addEventListener('load', () => {
+            const saved = localStorage.getItem('mcp_oauth_state');
+            if (saved) {
+                try {
+                    const state = JSON.parse(saved);
+                    clientId = state.clientId;
+                    codeVerifier = state.codeVerifier;
+
+                    if (clientId) {
+                        document.getElementById('success1').textContent = '✓ Client already registered';
+                        document.getElementById('success1').classList.add('show');
+                        document.getElementById('clientIdDisplay').textContent = `Client ID: ${clientId}`;
+                        document.getElementById('clientIdDisplay').classList.add('show');
+                        document.getElementById('authorizeBtn').disabled = false;
+                        document.getElementById('step1').classList.add('completed');
+                    }
+                } catch (e) {
+                    console.error('Failed to load saved state', e);
+                }
+            }
+
+            // Check for OAuth callback
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            const error = urlParams.get('error');
+
+            if (error) {
+                document.getElementById('error3').textContent = `OAuth Error: ${error}`;
+                document.getElementById('error3').classList.add('show');
+            } else if (code && clientId && codeVerifier) {
+                document.getElementById('step2').classList.add('completed');
+                exchangeToken(code);
+                // Clear URL
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        });
+
+        async function registerClient() {
+            const btn = document.getElementById('registerBtn');
+            const loading = document.getElementById('loading1');
+            const error = document.getElementById('error1');
+            const success = document.getElementById('success1');
+            const display = document.getElementById('clientIdDisplay');
+
+            btn.disabled = true;
+            loading.classList.add('show');
+            error.classList.remove('show');
+            success.classList.remove('show');
+
+            try {
+                const response = await fetch(`${CONFIG.apiServer}/mcp/oauth/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        registrationUrl: CONFIG.registrationUrl,
+                        redirectUris: [CONFIG.redirectUri],
+                        clientName: 'Simple MCP Client - OAuth Helper',
+                        clientUri: window.location.origin
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+                }
+
+                const data = await response.json();
+                clientId = data.client_id;
+
+                // Save to localStorage
+                saveState();
+
+                // Display result
+                display.textContent = JSON.stringify(data, null, 2);
+                display.classList.add('show');
+                success.textContent = `✓ Client registered successfully! Client ID: ${clientId}`;
+                success.classList.add('show');
+                loading.classList.remove('show');
+
+                // Enable next step
+                document.getElementById('authorizeBtn').disabled = false;
+                document.getElementById('step1').classList.add('completed');
+
+            } catch (err) {
+                loading.classList.remove('show');
+                error.textContent = `Error: ${err.message}`;
+                error.classList.add('show');
+                btn.disabled = false;
+            }
+        }
+
+        async function startAuthorization() {
+            const btn = document.getElementById('authorizeBtn');
+            const loading = document.getElementById('loading2');
+            const error = document.getElementById('error2');
+            const display = document.getElementById('codeVerifierDisplay');
+
+            btn.disabled = true;
+            loading.classList.add('show');
+            error.classList.remove('show');
+
+            try {
+                // Generate authorization URL
+                const response = await fetch(`${CONFIG.apiServer}/mcp/oauth/authorize-url`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        clientId: clientId,
+                        redirectUri: CONFIG.redirectUri,
+                        serverUrl: CONFIG.mcpServerUrl
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+                }
+
+                const data = await response.json();
+                codeVerifier = data.codeVerifier;
+
+                // Save state
+                saveState();
+
+                // Display code verifier
+                display.textContent = `Code Verifier: ${codeVerifier}`;
+                display.classList.add('show');
+
+                loading.classList.remove('show');
+                btn.textContent = '✓ Redirecting to authorization...';
+
+                // Redirect to authorization URL
+                window.location.href = data.authorizationUrl;
+
+            } catch (err) {
+                loading.classList.remove('show');
+                error.textContent = `Error: ${err.message}`;
+                error.classList.add('show');
+                btn.disabled = false;
+            }
+        }
+
+        async function exchangeToken(code) {
+            const loading = document.getElementById('loading3');
+            const error = document.getElementById('error3');
+            const success = document.getElementById('success3');
+            const display = document.getElementById('tokenDisplay');
+
+            loading.classList.add('show');
+            error.classList.remove('show');
+
+            try {
+                const response = await fetch(`${CONFIG.apiServer}/mcp/oauth/exchange-token`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        code: code,
+                        codeVerifier: codeVerifier,
+                        clientId: clientId,
+                        redirectUri: CONFIG.redirectUri,
+                        serverUrl: CONFIG.mcpServerUrl
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+                }
+
+                const tokens = await response.json();
+
+                // Display token
+                document.getElementById('tokenValue').textContent = tokens.access_token;
+                display.classList.add('show');
+                loading.classList.remove('show');
+                success.textContent = '✓ Successfully obtained access token!';
+                success.classList.add('show');
+                document.getElementById('step3').classList.add('completed');
+
+                // Save token
+                localStorage.setItem('mcp_access_token', tokens.access_token);
+                if (tokens.refresh_token) {
+                    localStorage.setItem('mcp_refresh_token', tokens.refresh_token);
+                }
+
+            } catch (err) {
+                loading.classList.remove('show');
+                error.textContent = `Error: ${err.message}`;
+                error.classList.add('show');
+            }
+        }
+
+        function copyToken() {
+            const tokenValue = document.getElementById('tokenValue').textContent;
+            navigator.clipboard.writeText(tokenValue).then(() => {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = '✓ Copied!';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 2000);
+            });
+        }
+
+        function saveState() {
+            localStorage.setItem('mcp_oauth_state', JSON.stringify({
+                clientId,
+                codeVerifier
+            }));
+        }
+    </script>
+</body>
+</html>

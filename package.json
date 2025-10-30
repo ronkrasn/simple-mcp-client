@@ -9,7 +9,9 @@
     "build": "tsc",
     "start:server": "npm run build && node dist/src/main.js",
     "dev:server": "tsx --watch src/main.ts",
-    "inspector": "npx @modelcontextprotocol/inspector"
+    "inspector": "npx @modelcontextprotocol/inspector",
+    "oauth": "tsx scripts/mcp-oauth.ts",
+    "test-tools": "tsx scripts/test-tools.ts"
   },
   "keywords": [
     "mcp",

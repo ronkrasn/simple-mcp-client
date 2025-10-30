@@ -283,6 +283,61 @@ export class MCPService {
   }
 
   /**
+   * Register a new OAuth client with MCP server (Dynamic Client Registration)
+   * Used by MCP Asana and other MCP servers that support RFC 7591
+   */
+  async registerOAuthClient(
+    registrationUrl: string,
+    redirectUris: string[],
+    clientName: string = 'simple-mcp-client',
+    clientUri?: string,
+  ): Promise<{
+    client_id: string;
+    client_secret?: string;
+    registration_access_token?: string;
+    registration_client_uri?: string;
+  }> {
+    this.logger.log(`Registering OAuth client at ${registrationUrl}`);
+
+    try {
+      const response = await fetch(registrationUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          redirect_uris: redirectUris,
+          token_endpoint_auth_method: 'none',
+          grant_types: ['authorization_code', 'refresh_token'],
+          response_types: ['code'],
+          client_name: clientName,
+          client_uri: clientUri || 'https://github.com/your-org/simple-mcp-client',
+          scope: '',
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+
+      const registration = await response.json() as {
+        client_id: string;
+        client_secret?: string;
+        registration_access_token?: string;
+        registration_client_uri?: string;
+      };
+      this.logger.log(`Successfully registered client: ${registration.client_id}`);
+
+      return registration;
+    } catch (error) {
+      const err = error as Error;
+      this.logger.error(`Failed to register OAuth client: ${err.message}`, err.stack);
+      throw error;
+    }
+  }
+
+  /**
    * Generate OAuth authorization URL
    * Supports both MCP SDK OAuth discovery and custom OAuth URLs (e.g., Asana)
    */
@@ -360,7 +415,7 @@ export class MCPService {
     code: string,
     codeVerifier: string | undefined,
     clientId: string,
-    clientSecret: string,
+    clientSecret: string | undefined,
     redirectUri: string,
     customTokenUrl?: string,
   ): Promise<OAuthTokens> {
@@ -375,10 +430,14 @@ export class MCPService {
         const params = new URLSearchParams({
           grant_type: 'authorization_code',
           client_id: clientId,
-          client_secret: clientSecret,
           redirect_uri: redirectUri,
           code: code,
         });
+
+        // Only add client_secret if provided (not needed for public clients)
+        if (clientSecret) {
+          params.set('client_secret', clientSecret);
+        }
 
         // Exchange code for token
         const response = await fetch(customTokenUrl, {
@@ -410,13 +469,19 @@ export class MCPService {
         throw new Error('Code verifier is required for MCP SDK OAuth');
       }
 
+      // Build client information - only include secret if provided
+      const clientInformation: any = {
+        client_id: clientId,
+      };
+
+      if (clientSecret) {
+        clientInformation.client_secret = clientSecret;
+      }
+
       // Exchange code for tokens
       const tokens = await exchangeAuthorization(serverUrl, {
         metadata,
-        clientInformation: {
-          client_id: clientId,
-          client_secret: clientSecret,
-        },
+        clientInformation,
         authorizationCode: code,
         codeVerifier: codeVerifier,
         redirectUri: redirectUri,
