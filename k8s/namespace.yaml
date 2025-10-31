@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mcp-client
+  labels:
+    name: mcp-client
+    app: mcp-oauth-server

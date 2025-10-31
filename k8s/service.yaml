@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mcp-client
+  namespace: mcp-client
+  labels:
+    app: mcp-client
+  annotations:
+    service.beta.kubernetes.io/do-loadbalancer-protocol: "http"
+    service.beta.kubernetes.io/do-loadbalancer-certificate-id: "59a9c9c3-15e5-4a2d-b88b-8d468657a698"
+    service.beta.kubernetes.io/do-loadbalancer-tls-ports: "443"
+    service.beta.kubernetes.io/do-loadbalancer-redirect-http-to-https: "true"
+spec:
+  type: LoadBalancer
+  selector:
+    app: mcp-client
+  ports:
+  - name: http
+    port: 80
+    targetPort: 3000
+    protocol: TCP
+  - name: https
+    port: 443
+    targetPort: 3000
+    protocol: TCP
+  sessionAffinity: None
