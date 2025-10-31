@@ -478,6 +478,14 @@ export class MCPService {
         clientInformation.client_secret = clientSecret;
       }
 
+      this.logger.log('Calling exchangeAuthorization with:');
+      this.logger.log(`- serverUrl: ${serverUrl}`);
+      this.logger.log(`- clientId: ${clientId}`);
+      this.logger.log(`- code length: ${code.length}`);
+      this.logger.log(`- codeVerifier length: ${codeVerifier.length}`);
+      this.logger.log(`- redirectUri: ${redirectUri}`);
+      this.logger.log(`- token endpoint: ${metadata.token_endpoint}`);
+
       // Exchange code for tokens
       const tokens = await exchangeAuthorization(serverUrl, {
         metadata,
@@ -491,7 +499,14 @@ export class MCPService {
       return tokens;
     } catch (error) {
       const err = error as Error;
-      this.logger.error(`Failed to exchange authorization code: ${err.message}`, err.stack);
+      this.logger.error(`Failed to exchange authorization code: ${err.message}`);
+      this.logger.error(`Error stack: ${err.stack}`);
+
+      // Try to extract more information from the error
+      if (error && typeof error === 'object') {
+        this.logger.error(`Error details: ${JSON.stringify(error, Object.getOwnPropertyNames(error))}`);
+      }
+
       throw error;
     }
   }

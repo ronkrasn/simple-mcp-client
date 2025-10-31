@@ -482,14 +482,21 @@ export class MCPController {
     },
   ) {
     this.logger.log('Exchanging OAuth authorization code for token');
-    return this.mcpService.exchangeAuthorizationCode(
-      body.serverUrl,
-      body.code,
-      body.codeVerifier,
-      body.clientId,
-      body.clientSecret,
-      body.redirectUri,
-      body.oauthTokenUrl,
-    );
+    this.logger.log(`Request body: clientId=${body.clientId}, serverUrl=${body.serverUrl}, hasCodeVerifier=${!!body.codeVerifier}, hasCode=${!!body.code}`);
+
+    try {
+      return await this.mcpService.exchangeAuthorizationCode(
+        body.serverUrl,
+        body.code,
+        body.codeVerifier,
+        body.clientId,
+        body.clientSecret,
+        body.redirectUri,
+        body.oauthTokenUrl,
+      );
+    } catch (error) {
+      this.logger.error('Token exchange failed in controller', error);
+      throw error;
+    }
   }
 }

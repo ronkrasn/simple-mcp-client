@@ -527,6 +527,41 @@ If you prefer to use HTTP during development:
 - **TypeScript**: Type safety and modern JavaScript features
 - **tsx**: TypeScript execution for development
 
+## 📚 OAuth Documentation
+
+Complete guides and examples for MCP OAuth authentication:
+
+- **[MCP OAuth Flow](MCP_OAUTH_FLOW.md)** - Visual guide with flow diagram
+- **[Complete Example](scripts/COMPLETE_EXAMPLE.md)** - End-to-end working examples
+- **[Quick Reference](scripts/QUICK_REFERENCE.md)** - Copy-paste curl commands
+- **[Scripts Guide](scripts/README.md)** - Demo scripts in multiple languages
+- **[OAuth Guide](MCP_OAUTH_GUIDE.md)** - Detailed technical documentation
+- **[Troubleshooting](TROUBLESHOOTING.md)** - Common issues and solutions ⚠️
+
+### Demo Scripts
+
+```bash
+# JavaScript/Node.js
+npm run oauth-demo
+
+# Python
+python3 scripts/mcp-oauth-demo.py
+
+# Bash + curl
+./scripts/mcp-oauth-demo.sh
+
+# TypeScript (advanced)
+npm run oauth
+```
+
+All scripts demonstrate the complete flow:
+1. Register OAuth client
+2. Generate authorization URL
+3. User authorization (browser)
+4. Exchange code for token
+5. **Fetch available tools**
+6. Call tools with the access token
+
 ## 🎓 Resources
 
 - [MCP Specification](https://spec.modelcontextprotocol.io/)

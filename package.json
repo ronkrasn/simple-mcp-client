@@ -11,6 +11,7 @@
     "dev:server": "tsx --watch src/main.ts",
     "inspector": "npx @modelcontextprotocol/inspector",
     "oauth": "tsx scripts/mcp-oauth.ts",
+    "oauth-demo": "node scripts/mcp-oauth-demo.js",
     "test-tools": "tsx scripts/test-tools.ts"
   },
   "keywords": [
