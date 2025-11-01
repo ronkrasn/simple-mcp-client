@@ -168,15 +168,29 @@ log "${CYAN}After authorizing, you will be redirected to:${RESET}"
 log "${YELLOW}  $REDIRECT_URI?code=AUTHORIZATION_CODE&state=...${RESET}"
 log "${BOLD}======================================================================${RESET}\n"
 
-read -p "$(echo -e ${BOLD}Paste the code from the url:${RESET} )" CODE
+read -p "$(echo -e ${BOLD}Paste the FULL redirect URL here:${RESET} )" REDIRECT_URL
+
+# Extract code from URL - handle both formats
+CODE=$(echo "$REDIRECT_URL" | grep -oP 'code=\K[^&]+' || echo "")
+
+# If grep didn't work, maybe user pasted just the code
+if [ -z "$CODE" ]; then
+    # Clean up the input in case user pasted just the code
+    CODE=$(echo "$REDIRECT_URL" | tr -d '[:space:]' | tr -d '\n' | tr -d '\r')
+fi
 
 if [ -z "$CODE" ]; then
-    log_error "No authorization code found in URL"
+    log_error "No authorization code found"
+    log_error "Please paste the full redirect URL like:"
+    log_error "  http://localhost:3000/oauth/callback?code=...&state=..."
     exit 1
 fi
 
+# Trim any whitespace
+CODE=$(echo "$CODE" | tr -d '[:space:]' | tr -d '\n' | tr -d '\r')
+
 log_success "Authorization code received"
-log "   Code: ${CODE:0:20}..."
+log "   Code: ${CODE:0:20}... (length: ${#CODE})"
 
 # Step 4: Exchange Code for Token
 log_step 4 "Exchanging authorization code for access token"
