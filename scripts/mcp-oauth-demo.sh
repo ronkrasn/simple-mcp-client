@@ -189,6 +189,9 @@ fi
 # Trim any whitespace
 CODE=$(echo "$CODE" | tr -d '[:space:]' | tr -d '\n' | tr -d '\r')
 
+# URL decode the code using Python (more reliable than printf)
+CODE=$(python3 -c "import sys; from urllib.parse import unquote; print(unquote(sys.argv[1]))" "$CODE" 2>/dev/null || echo "$CODE")
+
 log_success "Authorization code received"
 log "   Code: ${CODE:0:20}... (length: ${#CODE})"
 
