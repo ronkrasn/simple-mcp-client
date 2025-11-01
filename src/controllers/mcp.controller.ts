@@ -486,9 +486,12 @@ export class MCPController {
     this.logger.log(`Request body: clientId=${body.clientId}, serverUrl=${body.serverUrl}, hasCodeVerifier=${!!body.codeVerifier}, hasCode=${!!body.code}`);
 
     try {
+      // URL-decode the authorization code if it contains encoded characters
+      const decodedCode = decodeURIComponent(body.code);
+
       return await this.mcpService.exchangeAuthorizationCode(
         body.serverUrl,
-        body.code,
+        decodedCode,
         body.codeVerifier,
         body.clientId,
         body.clientSecret,
