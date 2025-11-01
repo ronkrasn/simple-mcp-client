@@ -195,57 +195,44 @@ CODE=$(python3 -c "import sys; from urllib.parse import unquote; print(unquote(s
 log_success "Authorization code received"
 log "   Code: ${CODE:0:20}... (length: ${#CODE})"
 
-# Check if this is already an Asana access token (format: number:string:string)
-if [[ "$CODE" =~ ^[0-9]+:[a-zA-Z0-9]+:[a-zA-Z0-9]+$ ]]; then
-    log_info "Detected Asana token format - skipping exchange step"
-    ACCESS_TOKEN="$CODE"
-    EXPIRES_IN="N/A"
+# Step 4: Exchange Code for Token
+log_step 4 "Exchanging authorization code for access token"
 
-    log_success "Using token directly (already in access token format)!"
-    log "\n${BOLD}======================================================================${RESET}"
-    log "${BOLD}${GREEN}ACCESS TOKEN:${RESET}"
-    log "${YELLOW}$ACCESS_TOKEN${RESET}"
-    log "${BOLD}======================================================================${RESET}\n"
-else
-    # Step 4: Exchange Code for Token
-    log_step 4 "Exchanging authorization code for access token"
+TOKEN_RESPONSE=$(curl -s -k -X POST "$API_BASE/mcp/oauth/exchange-token" \
+    -H "Content-Type: application/json" \
+    -d "{
+        \"code\": \"$CODE\",
+        \"codeVerifier\": \"$CODE_VERIFIER\",
+        \"clientId\": \"$CLIENT_ID\",
+        \"redirectUri\": \"$REDIRECT_URI\",
+        \"serverUrl\": \"$MCP_SERVER\"
+    }")
 
-    TOKEN_RESPONSE=$(curl -s -k -X POST "$API_BASE/mcp/oauth/exchange-token" \
-        -H "Content-Type: application/json" \
-        -d "{
-            \"code\": \"$CODE\",
-            \"codeVerifier\": \"$CODE_VERIFIER\",
-            \"clientId\": \"$CLIENT_ID\",
-            \"redirectUri\": \"$REDIRECT_URI\",
-            \"serverUrl\": \"$MCP_SERVER\"
-        }")
-
-    if [ -z "$TOKEN_RESPONSE" ]; then
-        log_error "Token exchange failed - no response"
-        exit 1
-    fi
-
-    ACCESS_TOKEN=$(echo "$TOKEN_RESPONSE" | jq -r '.access_token')
-    EXPIRES_IN=$(echo "$TOKEN_RESPONSE" | jq -r '.expires_in // "N/A"')
-
-    if [ "$ACCESS_TOKEN" = "null" ] || [ -z "$ACCESS_TOKEN" ]; then
-        log_error "Token exchange failed:"
-        echo "$TOKEN_RESPONSE" | jq .
-        exit 1
-    fi
-
-    log_success "Access token received!"
-    log "\n${BOLD}======================================================================${RESET}"
-    log "${BOLD}${GREEN}ACCESS TOKEN:${RESET}"
-    log "${YELLOW}$ACCESS_TOKEN${RESET}"
-    log "${BOLD}======================================================================${RESET}\n"
-
-    if [ "$EXPIRES_IN" != "N/A" ]; then
-        log_info "Token expires in: $EXPIRES_IN seconds"
-    fi
+if [ -z "$TOKEN_RESPONSE" ]; then
+    log_error "Token exchange failed - no response"
+    exit 1
 fi
 
-# Step 5 (or 4 if we skipped exchange): Fetch Tools
+ACCESS_TOKEN=$(echo "$TOKEN_RESPONSE" | jq -r '.access_token')
+EXPIRES_IN=$(echo "$TOKEN_RESPONSE" | jq -r '.expires_in // "N/A"')
+
+if [ "$ACCESS_TOKEN" = "null" ] || [ -z "$ACCESS_TOKEN" ]; then
+    log_error "Token exchange failed:"
+    echo "$TOKEN_RESPONSE" | jq .
+    exit 1
+fi
+
+log_success "Access token received!"
+log "\n${BOLD}======================================================================${RESET}"
+log "${BOLD}${GREEN}ACCESS TOKEN:${RESET}"
+log "${YELLOW}$ACCESS_TOKEN${RESET}"
+log "${BOLD}======================================================================${RESET}\n"
+
+if [ "$EXPIRES_IN" != "N/A" ]; then
+    log_info "Token expires in: $EXPIRES_IN seconds"
+fi
+
+# Step 5: Fetch Tools
 log "\n${BOLD}======================================================================${RESET}"
 log "${BOLD}${CYAN}Fetching available tools from MCP server...${RESET}"
 log "${BOLD}======================================================================${RESET}\n"
