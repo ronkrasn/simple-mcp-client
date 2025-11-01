@@ -751,23 +751,23 @@ export class MCPService {
         child.stdin?.write(JSON.stringify(initRequest) + '\n');
       }, 1000);
 
-      // Set timeout (30 seconds)
+      // Set timeout (90 seconds for initial connection - Asana MCP can be slow)
       setTimeout(() => {
         if (!child.killed) {
-          this.logger.warn('MCP Remote timeout - killing process');
+          this.logger.warn('MCP Remote timeout - killing process after 90s');
           child.kill();
           if (!foundTools) {
             resolve({
               success: false,
               host: config.host,
               url: url,
-              error: 'Connection timeout after 30 seconds',
+              error: 'Connection timeout after 90 seconds - Asana MCP server did not respond',
               tools: [],
               toolCount: 0,
             });
           }
         }
-      }, 30000);
+      }, 90000);
     });
   }
 
