@@ -453,9 +453,13 @@ export class MCPService {
           throw new Error(`HTTP ${response.status}: ${errorText}`);
         }
 
-        const tokens = await response.json();
+        const tokens = (await response.json()) as OAuthTokens;
         this.logger.log('Successfully exchanged authorization code for tokens');
-        return tokens as OAuthTokens;
+        this.logger.log(`Token response from ${customTokenUrl}:`);
+        this.logger.log(JSON.stringify(tokens, null, 2));
+        this.logger.log(`Access token format: ${tokens.access_token?.substring(0, 50)}...`);
+        this.logger.log(`Token type: ${tokens.token_type}`);
+        return tokens;
       }
 
       // Otherwise, use MCP SDK OAuth discovery
