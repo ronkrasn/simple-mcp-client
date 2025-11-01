@@ -78,13 +78,7 @@ export class MCPService {
             });
           };
 
-          // For Asana MCP, try adding token as URL parameter
-          const sseUrl = new URL(url);
-          if (config.token) {
-            sseUrl.searchParams.set('token', config.token);
-          }
-
-          const transport = new SSEClientTransport(sseUrl, {
+          const transport = new SSEClientTransport(new URL(url), {
             fetch: customFetch,
           });
 

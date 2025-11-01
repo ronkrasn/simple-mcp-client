@@ -90,7 +90,8 @@ export class MCPController {
   })
   async getToolsRemote(@Body() connectDto: ConnectMCPDto): Promise<MCPToolsResponseDto> {
     this.logger.log('Received request to fetch MCP tools via mcp-remote');
-    return this.mcpService.getToolsWithMcpRemote(connectDto);
+    // Use getTools instead of getToolsWithMcpRemote to properly support Authorization headers
+    return this.mcpService.getTools(connectDto);
   }
 
   @Post('call-tool')
