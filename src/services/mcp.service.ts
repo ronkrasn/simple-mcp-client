@@ -84,11 +84,8 @@ export class MCPService {
 
           await sdkClient.connect(transport);
 
-          // Get tools
-          const response = await sdkClient.request(
-            { method: 'tools/list' },
-            { tools: [] } as any,
-          );
+          // Get tools using the built-in listTools method
+          const response = await sdkClient.listTools();
           const tools = response.tools || [];
 
           this.logger.log(`Successfully retrieved ${tools.length} tools`);
