@@ -170,10 +170,10 @@ log "${BOLD}====================================================================
 
 read -p "$(echo -e ${BOLD}Paste the FULL redirect URL here:${RESET} )" REDIRECT_URL
 
-# Extract code from URL - handle both formats
-CODE=$(echo "$REDIRECT_URL" | grep -oP 'code=\K[^&]+' || echo "")
+# Extract code from URL using sed (more portable than grep -P)
+CODE=$(echo "$REDIRECT_URL" | sed -n 's/.*[?&]code=\([^&]*\).*/\1/p')
 
-# If grep didn't work, maybe user pasted just the code
+# If sed didn't extract anything, maybe user pasted just the code
 if [ -z "$CODE" ]; then
     # Clean up the input in case user pasted just the code
     CODE=$(echo "$REDIRECT_URL" | tr -d '[:space:]' | tr -d '\n' | tr -d '\r')
